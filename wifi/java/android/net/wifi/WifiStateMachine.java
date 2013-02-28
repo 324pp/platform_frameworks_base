@@ -358,8 +358,6 @@ public class WifiStateMachine extends StateMachine {
     /* Is IBSS mode supported by the driver? */  
     public static final int CMD_GET_IBSS_SUPPORTED        = BASE + 134;  
   
-
-
     public static final int CONNECT_MODE                   = 1;
     public static final int SCAN_ONLY_MODE                 = 2;
     public static final int SCAN_ONLY_WITH_WIFI_OFF_MODE   = 3;
@@ -1074,13 +1072,12 @@ public class WifiStateMachine extends StateMachine {
         return mCountryCode;
     }
 
-    public int syncIsIbssSupported(AsyncChannel channel) {  
-        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_IBSS_SUPPORTED);  
-        int result = resultMsg.arg1;  
-        resultMsg.recycle();  
-        return result;  
-    }  
-  
+    public int syncIsIbssSupported(AsyncChannel channel) {
+        Message resultMsg = channel.sendMessageSynchronously(CMD_GET_IBSS_SUPPORTED);
+        int result = resultMsg.arg1;
+        resultMsg.recycle();
+        return result;
+    }
 
     /**
      * Set the operational frequency band
@@ -2229,7 +2226,7 @@ public class WifiStateMachine extends StateMachine {
                     mWifiConfigStore.loadAndEnableAllNetworks();
                     initializeWpsDetails();
 
-                    mIbssSupported = mWifiNative.getModeCapability("IBSS");  
+                    mIbssSupported = mWifiNative.getModeCapability("IBSS");
 
                     sendSupplicantConnectionChangedBroadcast(true);
                     transitionTo(mDriverStartedState);
@@ -2259,7 +2256,7 @@ public class WifiStateMachine extends StateMachine {
                 case CMD_SET_FREQUENCY_BAND:
                 case CMD_START_PACKET_FILTERING:
                 case CMD_STOP_PACKET_FILTERING:
-                case CMD_GET_IBSS_SUPPORTED: 
+                case CMD_GET_IBSS_SUPPORTED:
                     deferMessage(message);
                     break;
                 default:
@@ -2323,10 +2320,9 @@ public class WifiStateMachine extends StateMachine {
                 case CMD_SET_OPERATIONAL_MODE:
                     mOperationalMode = message.arg1;
                     break;
-                case CMD_GET_IBSS_SUPPORTED:  
-                    deferMessage(message);  
-                    break;  
-
+                case CMD_GET_IBSS_SUPPORTED:
+                    deferMessage(message);
+                    break;
                 default:
                     return NOT_HANDLED;
             }
@@ -2643,9 +2639,9 @@ public class WifiStateMachine extends StateMachine {
                         setSuspendOptimizationsNative(SUSPEND_DUE_TO_HIGH_PERF, true);
                     }
                     break;
-                case CMD_GET_IBSS_SUPPORTED:  
-                    replyToMessage(message, message.what, mIbssSupported ? 1 : 0);  
-                    break;  
+                case CMD_GET_IBSS_SUPPORTED:
+                    replyToMessage(message, message.what, mIbssSupported ? 1 : 0);
+                    break;
                 default:
                     return NOT_HANDLED;
             }
