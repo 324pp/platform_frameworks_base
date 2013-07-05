@@ -65,6 +65,7 @@ public class ToggleManager {
     public static final String SIGNAL_TOGGLE = "SIGNAL";
     public static final String ROTATE_TOGGLE = "ROTATE";
     public static final String CLOCK_TOGGLE = "CLOCK";
+    public static final String CAMERA_TOGGLE = "CAMERA";
     public static final String GPS_TOGGLE = "GPS";
     public static final String IME_TOGGLE = "IME";
     public static final String BATTERY_TOGGLE = "BATTERY";
@@ -123,6 +124,7 @@ public class ToggleManager {
             toggleMap.put(WIFI_TOGGLE, WifiToggle.class);
             toggleMap.put(SIGNAL_TOGGLE, SignalToggle.class);
             toggleMap.put(ROTATE_TOGGLE, RotateToggle.class);
+	    toggleMap.put(CAMERA_TOGGLE, CameraToggle.class);
             toggleMap.put(CLOCK_TOGGLE, ClockToggle.class);
             toggleMap.put(GPS_TOGGLE, GpsToggle.class);
             toggleMap.put(IME_TOGGLE, ImeToggle.class);
@@ -217,6 +219,10 @@ public class ToggleManager {
         }
         mContainers[style] = container;
     }
+
+    public ViewGroup getContainer(int style) {
+	return mContainers[style];
+	}
 
     private void setupTraditional() {
         int widgetsPerRow = 6;
