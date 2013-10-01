@@ -274,24 +274,6 @@ public class WifiService extends IWifiManager.Stub {
                     ac.connect(mContext, this, msg.replyTo);
                     break;
                 }
-                case WifiManager.ENABLE_TRAFFIC_STATS_POLL: {
-                    mEnableTrafficStatsPoll = (msg.arg1 == 1);
-                    mTrafficStatsPollToken++;
-                    if (mEnableTrafficStatsPoll) {
-                        notifyOnDataActivity();
-                        sendMessageDelayed(Message.obtain(this, WifiManager.TRAFFIC_STATS_POLL,
-                                mTrafficStatsPollToken, 0), POLL_TRAFFIC_STATS_INTERVAL_MSECS);
-                    }
-                    break;
-                }
-                case WifiManager.TRAFFIC_STATS_POLL: {
-                    if (msg.arg1 == mTrafficStatsPollToken) {
-                        notifyOnDataActivity();
-                        sendMessageDelayed(Message.obtain(this, WifiManager.TRAFFIC_STATS_POLL,
-                                mTrafficStatsPollToken, 0), POLL_TRAFFIC_STATS_INTERVAL_MSECS);
-                    }
-                    break;
-                }
                 case WifiManager.CONNECT_NETWORK: {
                     mWifiStateMachine.sendMessage(Message.obtain(msg));
                     break;
@@ -602,6 +584,7 @@ public class WifiService extends IWifiManager.Stub {
         mWifiStateMachine.startScan(forceActive);
         noteScanStart();
     }
+
 
     private void enforceAccessPermission() {
         mContext.enforceCallingOrSelfPermission(android.Manifest.permission.ACCESS_WIFI_STATE,
@@ -984,7 +967,7 @@ public class WifiService extends IWifiManager.Stub {
          * of WifiLock & device idle status unless wifi enabled status is toggled
          */
 
-        mWifiStateMachine.setDriverStart(true, mEmergencyCallbackMode);
+        mWifiStateMachine.setDriverStart(true);
         mWifiStateMachine.reconnectCommand();
     }
 
@@ -992,6 +975,7 @@ public class WifiService extends IWifiManager.Stub {
         enforceConnectivityInternalPermission();
         mWifiStateMachine.captivePortalCheckComplete();
     }
+
 
     /**
      * see {@link android.net.wifi.WifiManager#stopWifi}
@@ -1003,7 +987,7 @@ public class WifiService extends IWifiManager.Stub {
          * TODO: if a stop is issued, wifi is brought up only by startWifi
          * unless wifi enabled status is toggled
          */
-        mWifiStateMachine.setDriverStart(false, mEmergencyCallbackMode);
+        mWifiStateMachine.setDriverStart(false);
     }
 
     /**
@@ -1217,11 +1201,11 @@ public class WifiService extends IWifiManager.Stub {
                 mWifiStateMachine.setWifiEnabled(true);
                 mWifiStateMachine.setScanOnlyMode(
                         strongestLockMode == WifiManager.WIFI_MODE_SCAN_ONLY);
-                mWifiStateMachine.setDriverStart(true, mEmergencyCallbackMode);
+                mWifiStateMachine.setDriverStart(true);
                 mWifiStateMachine.setHighPerfModeEnabled(strongestLockMode
                         == WifiManager.WIFI_MODE_FULL_HIGH_PERF);
             } else {
-                mWifiStateMachine.setDriverStart(false, mEmergencyCallbackMode);
+                mWifiStateMachine.setDriverStart(false);
             }
         } else {
             mWifiStateMachine.setWifiEnabled(false);
@@ -1305,11 +1289,6 @@ public class WifiService extends IWifiManager.Stub {
         pw.println("Locks held:");
         mLocks.dump(pw);
 
-        pw.println();
-        pw.println("WifiWatchdogStateMachine dump");
-        mWifiWatchdogStateMachine.dump(pw);
-        pw.println("WifiStateMachine dump");
-        mWifiStateMachine.dump(fd, pw, args);
     }
 
     private class WifiLock extends DeathRecipient {
@@ -1678,17 +1657,6 @@ public class WifiService extends IWifiManager.Stub {
      * Evaluate if traffic stats polling is needed based on
      * connection and screen on status
      */
-    private void evaluateTrafficStatsPolling() {
-        Message msg;
-        if (mNetworkInfo.getDetailedState() == DetailedState.CONNECTED && !mScreenOff) {
-            msg = Message.obtain(mAsyncServiceHandler,
-                    WifiManager.ENABLE_TRAFFIC_STATS_POLL, 1, 0);
-        } else {
-            msg = Message.obtain(mAsyncServiceHandler,
-                    WifiManager.ENABLE_TRAFFIC_STATS_POLL, 0, 0);
-        }
-        msg.sendToTarget();
-    }
 
     private void notifyOnDataActivity() {
         long sent, received;

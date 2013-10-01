@@ -82,6 +82,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Iterator;
@@ -355,21 +356,17 @@ public class WifiStateMachine extends StateMachine {
     public static final int CMD_DISABLE_P2P_REQ           = BASE + 132;
     public static final int CMD_DISABLE_P2P_RSP           = BASE + 133;
 
-    public static final int CMD_BOOT_COMPLETED            = BASE + 136;
-
-    /* Is IBSS mode supported by the driver? */  
-    public static final int CMD_GET_IBSS_SUPPORTED        = BASE + 134;  
+    /* Is IBSS mode supported by the driver? */
+    public static final int CMD_GET_IBSS_SUPPORTED        = BASE + 134;
 
     /* Get supported channels */
     public static final int CMD_GET_SUPPORTED_CHANNELS    = BASE + 135;
 
-  
+    public static final int CMD_BOOT_COMPLETED            = BASE + 136;
+
     public static final int CONNECT_MODE                   = 1;
     public static final int SCAN_ONLY_MODE                 = 2;
     public static final int SCAN_ONLY_WITH_WIFI_OFF_MODE   = 3;
-
-    private static final int SCAN_ACTIVE = 1;
-    private static final int SCAN_PASSIVE = 2;
 
     private static final int SUCCESS = 1;
     private static final int FAILURE = -1;
@@ -776,9 +773,9 @@ public class WifiStateMachine extends StateMachine {
      */
     public void setSupplicantRunning(boolean enable) {
         if (enable) {
+            WifiNative.setMode(0);
             sendMessage(CMD_START_SUPPLICANT);
         } else {
-            mWifiConfigStore.setStateFromAutoConnectAllNetworks();
             sendMessage(CMD_STOP_SUPPLICANT);
         }
     }
@@ -788,6 +785,7 @@ public class WifiStateMachine extends StateMachine {
      */
     public void setHostApRunning(WifiConfiguration wifiConfig, boolean enable) {
         if (enable) {
+            WifiNative.setMode(1);
             sendMessage(CMD_START_AP, wifiConfig);
         } else {
             sendMessage(CMD_STOP_AP);
@@ -2035,6 +2033,7 @@ public class WifiStateMachine extends StateMachine {
                 case WifiMonitor.SCAN_RESULTS_EVENT:
                 case WifiMonitor.SUPPLICANT_STATE_CHANGE_EVENT:
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
+                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
                 case WifiMonitor.WPS_OVERLAP_EVENT:
                 case CMD_BLACKLIST_NETWORK:
                 case CMD_CLEAR_BLACKLIST:
@@ -2461,6 +2460,7 @@ public class WifiStateMachine extends StateMachine {
                 case WifiMonitor.NETWORK_CONNECTION_EVENT:
                 case WifiMonitor.NETWORK_DISCONNECTION_EVENT:
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
+                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
                 case WifiMonitor.WPS_OVERLAP_EVENT:
                 case CMD_SET_COUNTRY_CODE:
                 case CMD_SET_FREQUENCY_BAND:
@@ -2552,7 +2552,7 @@ public class WifiStateMachine extends StateMachine {
                     break;
                 case CMD_SET_COUNTRY_CODE:
                     String country = (String) message.obj;
-                    String countryCode = country != null ? country.toUpperCase() : null;
+                    String countryCode = country != null ? country.toUpperCase(Locale.ROOT) : null;
                     if (DBG) log("set country code " + countryCode);
                     if (mWifiNative.setCountryCode(countryCode)) {
                         mCountryCode = countryCode;
@@ -2849,6 +2849,9 @@ public class WifiStateMachine extends StateMachine {
             WifiConfiguration config;
             boolean ok;
             switch(message.what) {
+                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
+                    mSupplicantStateTracker.sendMessage(WifiMonitor.ASSOCIATION_REJECTION_EVENT);
+                    break;
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
                     mSupplicantStateTracker.sendMessage(WifiMonitor.AUTHENTICATION_FAILURE_EVENT);
                     break;
@@ -3584,6 +3587,9 @@ public class WifiStateMachine extends StateMachine {
                     if (DBG) log("Network connection lost");
                     handleNetworkDisconnect();
                     break;
+                case WifiMonitor.ASSOCIATION_REJECTION_EVENT:
+                    if (DBG) log("Ignore Assoc reject event during WPS Connection");
+                    break;
                 case WifiMonitor.AUTHENTICATION_FAILURE_EVENT:
                     // Disregard auth failure events during WPS connection. The
                     // EAP sequence is retried several times, and there might be
@@ -3855,3 +3861,4 @@ public class WifiStateMachine extends StateMachine {
         return msg;
     }
 }
+
